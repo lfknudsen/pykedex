@@ -1,29 +1,17 @@
-﻿import json
-import os
-import sys
+﻿import sys
 from typing import Any
-from pathlib import Path
 import httpx
 from httpx import Response
 from dataclasses import dataclass
 
-CACHE_DIR: str = "cache"
-CACHE_SUBDIR_POKEMON: str = "pokémon"
-CACHE_SUBDIR_EVO: str = "evo"
-CACHE_SUBDIR_ITEMS: str = "items"
-CACHE_SUBDIR_MOVES: str = "moves"
-CACHE_SUBDIR_LOCATIONS: str = "locations"
-CACHE_SUBDIR_TYPES: str = "types"
-CACHE_FILE_EXT: str = ".json"
-CACHE_PATH_STR: str = os.path.join(os.path.dirname(__file__), CACHE_DIR)
-CACHE_PATH: Path = Path(CACHE_PATH_STR)
+from caching import CACHE_SUBDIR_EVO, CACHE_SUBDIR_ITEMS, CACHE_SUBDIR_LOCATIONS, \
+    CACHE_SUBDIR_MOVES, \
+    CACHE_SUBDIR_POKEMON, \
+    CACHE_SUBDIR_TYPES, cache_evo, cache_item, \
+    cache_location, cache_move, cache_species, \
+    check_cache
 
 verbose = __name__ == "__main__" and len(sys.argv) > 1 and sys.argv[1] == "-v"
-
-
-def output_file(category: str, name: str) -> Path:
-    return Path(os.path.join(CACHE_PATH_STR, category, name + CACHE_FILE_EXT))
-
 
 type JSON = dict[str, Any]
 
@@ -59,51 +47,6 @@ class Text:
         if self.text != "":
             self.text = f"({self.text})"
         return self.text
-
-
-def check_cache(category: str, filename: str) -> JSON | None:
-    try:
-        with open(output_file(category, filename)) as f:
-            contents: str = f.read()
-            return json.loads(contents)
-    except:
-        return None
-
-
-def dump_json(filename: Path, json_contents: JSON):
-    filename.parent.mkdir(exist_ok=True, parents=True)
-    with open(filename, mode="w") as f:
-        json.dump(json_contents, f)
-
-
-def cache_species(new_entry: JSON):
-    output = output_file(CACHE_SUBDIR_POKEMON, new_entry.get("name", "unknown"))
-    dump_json(output, new_entry)
-
-
-def cache_evo(new_entry: JSON):
-    output = output_file(CACHE_SUBDIR_EVO, str(new_entry.get("id", "unknown")))
-    dump_json(output, new_entry)
-
-
-def cache_item(new_entry: JSON):
-    output = output_file(CACHE_SUBDIR_ITEMS, new_entry.get("name", "unknown"))
-    dump_json(output, new_entry)
-
-
-def cache_move(new_entry: JSON):
-    output = output_file(CACHE_SUBDIR_MOVES, new_entry.get("name", "unknown"))
-    dump_json(output, new_entry)
-
-
-def cache_location(new_entry: JSON):
-    output = output_file(CACHE_SUBDIR_LOCATIONS, new_entry.get("name", "unknown"))
-    dump_json(output, new_entry)
-
-
-def cache_type(new_entry: JSON):
-    output = output_file(CACHE_SUBDIR_TYPES, new_entry.get("name", "unknown"))
-    dump_json(output, new_entry)
 
 
 def request(url: str) -> JSON:
@@ -159,6 +102,14 @@ def retrieve_pkmn(name: str) -> JSON:
 
 def retrieve_location(name: str) -> JSON:
     contents: JSON | None = check_cache(CACHE_SUBDIR_LOCATIONS, name)
+    if contents is None:
+        contents: JSON = request(f"https://pokeapi.co/api/v2/location/{name}/")
+        cache_location(contents)
+    return contents
+
+
+def retrieve_evo(name: str) -> JSON:
+    contents: JSON | None = check_cache(CACHE_SUBDIR_EVO, name)
     if contents is None:
         contents: JSON = request(f"https://pokeapi.co/api/v2/location/{name}/")
         cache_location(contents)
@@ -262,8 +213,8 @@ def parse_individual_evo_chain(before: list[Evolution],
     return chains
 
 
-def get_evolution_chain(entry: JSON) -> list[list[Evolution]]:
-    chain_entry: dict[str, str] | None = entry.get("evolution_chain", None)
+def get_evolution_chain(pkmn: JSON) -> list[list[Evolution]]:
+    chain_entry: dict[str, str] | None = pkmn.get("evolution_chain", None)
     if chain_entry is None:
         return []
     chain_url: str | None = chain_entry.get("url", None)
@@ -272,13 +223,8 @@ def get_evolution_chain(entry: JSON) -> list[list[Evolution]]:
     chain_id = str(chain_url.rsplit("/", 1)[0])
     chain: JSON | None = check_cache(CACHE_SUBDIR_EVO, chain_id)
     if chain is None:
-        response: Response = httpx.get(chain_url)
-        if response.is_error:
-            print(response.status_code)
-            exit(1)
-        else:
-            chain: JSON = response.json()
-            cache_evo(chain)
+        chain = request(chain_url)
+        cache_evo(chain)
 
     output: list[list[Evolution]] = []
     base_form = get_formatted_pkmn_name(chain.get("chain").get("species").get("name"))
