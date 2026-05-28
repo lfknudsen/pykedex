@@ -34,6 +34,22 @@ class Evolution:
     trade: bool
 
 
+@dataclass
+class Text:
+    text: str = ""
+
+    def append(self, string: Any | None):
+        if string is not None:
+            if self.text != "":
+                self.text += " "
+            self.text += str(string)
+
+    def finalise(self) -> str:
+        if self.text != "":
+            self.text = f"({self.text})"
+        return self.text
+
+
 def check_cache(category: str, filename: str) -> JSON | None:
     try:
         with open(output_file(category, filename)) as f:
@@ -195,22 +211,14 @@ def print_evo_chain(chain: list[Evolution]):
         return
     print(chain.pop(0).pkmn_name, end="")
     for link in chain:
-        transition_text: str = ""
-        if link.min_level is not None:
-            transition_text = str(link.min_level)
-        if link.item is not None:
-            transition_text += f"{link.item}"
-        if link.known_move is not None:
-            transition_text += f"{link.known_move}"
-        if link.held_item is not None:
-            transition_text += f"{link.held_item}"
+        transition_text: Text = Text()
+        transition_text.append(link.min_level)
+        transition_text.append(link.item)
+        transition_text.append(link.known_move)
+        transition_text.append(link.held_item)
         if link.trade:
-            if transition_text != "":
-                transition_text += " "
-            transition_text += f"on trade"
-        if transition_text != "":
-            transition_text = f"({transition_text})"
-        print(" --" + transition_text + "--> " + link.pkmn_name, end="")
+            transition_text.append("on trade")
+        print(" --" + transition_text.finalise() + "--> " + link.pkmn_name, end="")
     print()
 
 
