@@ -19,52 +19,58 @@ def get_formatted_name(content: JSON) -> str:
     return content.get("name", "Unknown").title()
 
 
-def get_formatted_pkmn_name(name: str) -> str:
-    contents = retrieve_pkmn(name)
+def get_formatted_pkmn_name(name: str, verbose: bool) -> str:
+    contents = retrieve_pkmn(name, verbose)
     return get_formatted_name(contents)
 
 
-def get_formatted_item_name(name: str) -> str:
-    contents = retrieve_item(name)
+def get_formatted_item_name(name: str, verbose: bool) -> str:
+    contents = retrieve_item(name, verbose)
     return get_formatted_name(contents)
 
 
-def get_formatted_move_name(name: str) -> str:
-    contents = retrieve_move(name)
+def get_formatted_move_name(name: str, verbose: bool) -> str:
+    contents = retrieve_move(name, verbose)
     return get_formatted_name(contents)
 
 
-def get_formatted_type_name(name: str) -> str:
-    contents = retrieve_type(name)
+def get_formatted_type_name(name: str, verbose: bool) -> str:
+    contents = retrieve_type(name, verbose)
     return get_formatted_name(contents)
 
 
-def get_formatted_location_name(name: str) -> str:
-    contents = retrieve_location(name)
+def get_formatted_location_name(name: str, verbose: bool) -> str:
+    contents = retrieve_location(name, verbose)
     return get_formatted_name(contents)
 
 
 def parse_individual_evo_chain(before: list[Evolution],
-                               evolves_to: dict[str, Any]) -> list[list[Evolution]]:
-    name: str = get_formatted_pkmn_name(evolves_to.get("species").get("name"))
+                               evolves_to: dict[str, Any],
+                               verbose: bool) -> list[list[Evolution]]:
+    name: str = get_formatted_pkmn_name(evolves_to.get("species").get("name"),
+                                        verbose)
     chains: list[list[Evolution]] = []
     for details in evolves_to.get("evolution_details"):
         lvl: int = details.get("min_level", -1)
         item: str | None = None
         if details.get("item") is not None:
-            item = get_formatted_item_name(details.get("item").get("name"))
+            item = get_formatted_item_name(details.get("item").get("name"),
+                                           verbose)
 
         known_move: str | None = None
         if details.get("known_move") is not None:
-            known_move = get_formatted_move_name(details.get("known_move").get("name"))
+            known_move = get_formatted_move_name(details.get("known_move").get("name"),
+                                                 verbose)
 
         known_move_type: str | None = None
         if details.get("known_move_type") is not None:
-            known_move_type = get_formatted_type_name(details.get("known_move_type").get("name"))
+            known_move_type = get_formatted_type_name(details.get("known_move_type").get("name"),
+                                                      verbose)
 
         held_item: str | None = None
         if details.get("held_item") is not None:
-            held_item = get_formatted_item_name(details.get("held_item").get("name"))
+            held_item = get_formatted_item_name(details.get("held_item").get("name"),
+                                                verbose)
 
         min_happiness: int | None = None
         if details.get("min_happiness") is not None:
@@ -76,7 +82,8 @@ def parse_individual_evo_chain(before: list[Evolution],
 
         location: str | None = None
         if details.get("location") is not None:
-            location = get_formatted_location_name(details.get("location").get("name"))
+            location = get_formatted_location_name(details.get("location").get("name"),
+                                                   verbose)
 
         min_affection: int | None = None
         if details.get("min_affection") is not None:
@@ -101,7 +108,7 @@ def parse_individual_evo_chain(before: list[Evolution],
         updated_chains = []
         if len(evolves_to.get("evolves_to")) != 0:
             for next_evo in evolves_to.get("evolves_to"):
-                updated_chains.extend(parse_individual_evo_chain(updated_list, next_evo))
+                updated_chains.extend(parse_individual_evo_chain(updated_list, next_evo, verbose))
         else:
             updated_chains = [updated_list]
         chains.extend(updated_chains)
@@ -118,7 +125,8 @@ def get_evolution_chain(pkmn: JSON, verbose: bool = False) -> list[list[Evolutio
     chain: JSON = retrieve_evo(chain_url, verbose)
 
     output: list[list[Evolution]] = []
-    base_form = get_formatted_pkmn_name(chain.get("chain").get("species").get("name"))
+    base_form = get_formatted_pkmn_name(chain.get("chain").get("species").get("name"),
+                                        verbose)
     for evolves_to in chain.get("chain").get("evolves_to"):
         initial_form = Evolution(base_form,
                                  None,
@@ -133,7 +141,7 @@ def get_evolution_chain(pkmn: JSON, verbose: bool = False) -> list[list[Evolutio
                                  None,
                                  )
         sublist = [initial_form]
-        output.extend(parse_individual_evo_chain(sublist, evolves_to))
+        output.extend(parse_individual_evo_chain(sublist, evolves_to, verbose))
     return output
 
 
