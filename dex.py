@@ -18,6 +18,7 @@ CACHE_PATH: Path = Path(CACHE_PATH_STR)
 
 verbose = len(sys.argv) > 1 and sys.argv[1] == "-v"
 
+
 def output_file(category: str, name: str) -> Path:
     return Path(os.path.join(CACHE_PATH_STR, category, name + CACHE_FILE_EXT))
 
@@ -87,6 +88,20 @@ def cache_move(new_entry: JSON):
     dump_json(output, new_entry)
 
 
+def request(url: str) -> JSON:
+    if verbose:
+        print(f"MAKING HTTP REQUEST TO {url}")
+    response: Response = httpx.get(url)
+    if response.is_error:
+        print("Error: Status code", response.status_code)
+        exit(1)
+    try:
+        return response.json()
+    except Exception as e:
+        print("Could not parse JSON: ", str(e))
+        exit(1)
+
+
 def get_egg_groups(entry: JSON) -> list[str]:
     egg_groups: list[dict[str, str]] = entry.get("egg_groups")
     return [group.get("name") for group in egg_groups]
@@ -95,39 +110,24 @@ def get_egg_groups(entry: JSON) -> list[str]:
 def retrieve_item(name: str) -> JSON:
     contents: JSON | None = check_cache(CACHE_SUBDIR_ITEMS, name)
     if contents is None:
-        response: Response = httpx.get(f"https://pokeapi.co/api/v2/item/{name}/")
-        if response.is_error:
-            print(response.status_code)
-            exit(1)
-        else:
-            contents: JSON = response.json()
-            cache_item(contents)
+        contents: JSON = request(f"https://pokeapi.co/api/v2/item/{name}/")
+        cache_item(contents)
     return contents
 
 
 def retrieve_move(name: str) -> JSON:
     contents: JSON | None = check_cache(CACHE_SUBDIR_MOVES, name)
     if contents is None:
-        response: Response = httpx.get(f"https://pokeapi.co/api/v2/move/{name}/")
-        if response.is_error:
-            print(response.status_code)
-            exit(1)
-        else:
-            contents: JSON = response.json()
-            cache_move(contents)
+        contents: JSON = request(f"https://pokeapi.co/api/v2/move/{name}/")
+        cache_move(contents)
     return contents
 
 
 def retrieve_pkmn(name: str) -> JSON:
     contents: JSON | None = check_cache(CACHE_SUBDIR_POKEMON, name)
     if contents is None:
-        response: Response = httpx.get(f"https://pokeapi.co/api/v2/pokemon-species/{name}/")
-        if response.is_error:
-            print(response.status_code)
-            exit(1)
-        else:
-            contents: JSON = response.json()
-            cache_species(contents)
+        contents: JSON = request(f"https://pokeapi.co/api/v2/pokemon-species/{name}/")
+        cache_species(contents)
     return contents
 
 
@@ -179,7 +179,6 @@ def parse_individual_evo_chain(before: list[Evolution],
         trade: bool = False
         if details.get("trigger") is not None:
             trade = details.get("trigger").get("name") == "trade"
-
 
         updated_list = before + [Evolution(name,
                                            lvl,
