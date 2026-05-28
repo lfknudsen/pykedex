@@ -1,6 +1,6 @@
 [project]
 name = "pykedex"
-version = "0.1.0"
+version = "1.0.0"
 description = "A CLI Pokédex which accesses the API at PokeAPI.co"
 requires-python = ">=3.14"
 dependencies = [

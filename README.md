@@ -73,3 +73,14 @@ of the following ways:
 * with high affection,
 * at a particular time of day
 * on trade.
+
+
+## To-Do
+* Give the output colours
+* Movesets
+* Stats
+* TM lookup
+* Move lookup
+* Item lookup
+* Specify generation or game
+* ...
