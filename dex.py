@@ -145,37 +145,47 @@ def get_evolution_chain(pkmn: JSON, verbose: bool = False) -> list[list[Evolutio
     return output
 
 
-def print_evo_chain(chain: list[Evolution]):
+def build_transition_text(link: Evolution) -> str:
+    transition_text: Text = Text()
+    transition_text.append("at lv", link.min_level)
+    transition_text.append("using", link.item)
+    transition_text.append("knowing", link.known_move)
+    if link.known_move_type is not None:
+        determiner: str = "a"
+        if link.known_move_type[0] in "aeiou":
+            determiner = "an"
+        transition_text.append(f"knowing {determiner}",
+                               f"{link.known_move_type}-type move")
+    transition_text.append("holding", link.held_item)
+    transition_text.append("with happiness", link.min_happiness)
+    transition_text.append("during the", link.time_of_day)
+    if link.location is not None:
+        preposition: str = "in"
+        on_words: tuple[str,...] = ("Route", "Mount", "Road", "Path", "Mountain")
+        if link.location.startswith(on_words) or link.location.endswith(on_words):
+            preposition = "on"
+        transition_text.append(preposition, link.location)
+
+    transition_text.append("with affection", link.min_affection)
+
+    if link.trade:
+        transition_text.append(None, "on trade")
+
+    return transition_text.finalise()
+
+
+def generate_evo_strings(chain: list[Evolution]) -> list[str]:
     if len(chain) == 0:
-        return
-    print(chain.pop(0).pkmn_name, end="")
+        return []
+    output: list[str] = [chain.pop(0).pkmn_name]
     for link in chain:
-        transition_text: Text = Text()
-        transition_text.append("at lv", link.min_level)
-        transition_text.append("using", link.item)
-        transition_text.append("knowing", link.known_move)
-        if link.known_move_type is not None:
-            determiner = "a"
-            if link.known_move_type[0] in "aeiou":
-                determiner = "an"
-            transition_text.append(f"knowing {determiner}",
-                                   f"{link.known_move_type}-type move")
-        transition_text.append("holding", link.held_item)
-        transition_text.append("with happiness", link.min_happiness)
-        transition_text.append("during the", link.time_of_day)
-        if link.location is not None:
-            preposition = "in"
-            if link.location.startswith(("Route", "Mount")) or link.location.endswith("Mountain"):
-                preposition = "on"
-            transition_text.append(preposition, link.location)
+        output.append(f"--{build_transition_text(link)}-->")
+        output.append(link.pkmn_name)
+    return output
 
-        transition_text.append("with affection", link.min_affection)
 
-        if link.trade:
-            transition_text.append(None, "on trade")
-        print(" --" + transition_text.finalise() + "--> " + link.pkmn_name, end="")
-    print()
-
+def print_evo_chain(chain: list[Evolution]):
+    print(" ".join(generate_evo_strings(chain)))
 
 def main():
     next_arg = 1
