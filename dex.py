@@ -35,6 +35,7 @@ class Evolution:
     held_item: str | None
     trade: bool
     min_happiness: int | None
+    time_of_day: str | None
 
 
 @dataclass
@@ -176,6 +177,10 @@ def parse_individual_evo_chain(before: list[Evolution],
         if details.get("min_happiness") is not None:
             min_happiness = details.get("min_happiness")
 
+        time_of_day: str | None = None
+        if details.get("time_of_day") is not None and details.get("time_of_day") != "":
+            time_of_day = details.get("time_of_day")
+
         trade: bool = False
         if details.get("trigger") is not None:
             trade = details.get("trigger").get("name") == "trade"
@@ -187,6 +192,7 @@ def parse_individual_evo_chain(before: list[Evolution],
                                            held_item,
                                            trade,
                                            min_happiness,
+                                           time_of_day,
                                            )]
         updated_chains = []
         if len(evolves_to.get("evolves_to")) != 0:
@@ -219,7 +225,16 @@ def get_evolution_chain(entry: JSON) -> list[list[Evolution]]:
     output: list[list[Evolution]] = []
     base_form = get_formatted_pkmn_name(chain.get("chain").get("species").get("name"))
     for evolves_to in chain.get("chain").get("evolves_to"):
-        sublist = [Evolution(base_form, None, None, None, None, False, None)]
+        initial_form = Evolution(base_form,
+                                 None,
+                                 None,
+                                 None,
+                                 None,
+                                 False,
+                                 None,
+                                 None,
+                                 )
+        sublist = [initial_form]
         output.extend(parse_individual_evo_chain(sublist, evolves_to))
     return output
 
@@ -236,6 +251,9 @@ def print_evo_chain(chain: list[Evolution]):
         transition_text.append(link.held_item)
         if link.min_happiness is not None:
             transition_text.append(f"with happiness {link.min_happiness}")
+        if link.time_of_day is not None:
+            transition_text.append(f"during the {link.time_of_day}")
+
         if link.trade:
             transition_text.append("on trade")
         print(" --" + transition_text.finalise() + "--> " + link.pkmn_name, end="")
