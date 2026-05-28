@@ -1,4 +1,4 @@
-﻿# Pykedex
+﻿# Pykédex
 
 A simple CLI tool for quickly getting information about specific Pokémon.
 Data is retrieved from pokeapi.co, and the results of all requests are cached.
