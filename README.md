@@ -3,6 +3,8 @@
 A simple CLI tool for quickly getting information about specific Pokémon.
 Data is retrieved from https://www.pokeapi.co, and the results of all requests are cached.
 
+Contributions of any kind, no matter how trivial, are more than welcome, as long as they are not LLM-generated.
+
 ## Usage
 
 ```
