@@ -38,6 +38,7 @@ class Evolution:
     min_happiness: int | None
     time_of_day: str | None
     location: str | None
+    min_affection: int | None
 
 
 @dataclass
@@ -207,6 +208,10 @@ def parse_individual_evo_chain(before: list[Evolution],
         if details.get("location") is not None:
             location = get_formatted_location_name(details.get("location").get("name"))
 
+        min_affection: int | None = None
+        if details.get("min_affection") is not None:
+            min_affection = details.get("min_affection")
+
         trade: bool = False
         if details.get("trigger") is not None:
             trade = details.get("trigger").get("name") == "trade"
@@ -220,6 +225,7 @@ def parse_individual_evo_chain(before: list[Evolution],
                                            min_happiness,
                                            time_of_day,
                                            location,
+                                           min_affection,
                                            )]
         updated_chains = []
         if len(evolves_to.get("evolves_to")) != 0:
@@ -261,6 +267,7 @@ def get_evolution_chain(entry: JSON) -> list[list[Evolution]]:
                                  None,
                                  None,
                                  None,
+                                 None,
                                  )
         sublist = [initial_form]
         output.extend(parse_individual_evo_chain(sublist, evolves_to))
@@ -284,6 +291,9 @@ def print_evo_chain(chain: list[Evolution]):
             if link.location.startswith(("Route", "Mount")) or link.location.endswith("Mountain"):
                 preposition = "on"
             transition_text.append(preposition, link.location)
+
+        transition_text.append("with affection", link.min_affection)
+
         if link.trade:
             transition_text.append(None, "on trade")
         print(" --" + transition_text.finalise() + "--> " + link.pkmn_name, end="")
