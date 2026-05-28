@@ -187,6 +187,47 @@ def generate_evo_strings(chain: list[Evolution]) -> list[str]:
 def print_evo_chain(chain: list[Evolution]):
     print(" ".join(generate_evo_strings(chain)))
 
+
+def get_column_widths(chains: list[list[str]]) -> list[int]:
+    if len(chains) == 0:
+        return []
+    # We get the number of elements that each sublist might contain
+    # to help avoid out-of-range exceptions
+    column_count: int = 0
+    for chain in chains:
+        column_count = max(column_count, len(chain))
+
+    # Initialise a list of the maximum character widths per column
+    max_widths: list[int] = [len(word) for word in chains[0]]
+
+    # Continuation of out-of-range avoidance, just to make it simpler inside the
+    # for loop later
+    while len(max_widths) < column_count:
+        max_widths.append(0)
+
+    for row in chains[1:]:
+        for i in range(0, len(row)):
+            max_widths[i] = max(max_widths[i], len(row[i]))
+    return max_widths
+
+
+def format_evo_chains(chains: list[list[Evolution]]) -> list[str]:
+    chain_strings: list[list[str]] = []
+    for chain in chains:
+        strings: list[str] = generate_evo_strings(chain)
+        chain_strings.append(strings)
+    widths = get_column_widths(chain_strings)
+    output: list[str] = []
+    for row in chain_strings:
+        sub_output: list[str] = []
+        for column_idx in range(0, len(row)):
+            left_justified = row[column_idx].ljust(widths[column_idx])
+            sub_output.append(left_justified)
+        concatenated = " ".join(sub_output)
+        output.append(concatenated)
+    return output
+
+
 def main():
     next_arg = 1
     verbose = len(sys.argv) > next_arg and sys.argv[next_arg] == "-v"
@@ -210,11 +251,14 @@ def main():
         case "egg" | "eggs" | "egg group" | "egg groups" | "egg-group" | "egg-groups" | "group" | "groups":
             [print(group.title()) for group in get_egg_groups(contents)]
         case "evo":
+            to_keep: list[list[Evolution]] = []
             for chain in get_evolution_chain(contents, verbose):
                 for subchain in chain:
                     if subchain.pkmn_name.casefold() == name.casefold():
-                        print_evo_chain(chain)
+                        to_keep.append(chain)
                         break
+            [print(evo) for evo in format_evo_chains(to_keep)]
+
 
 
 if __name__ == "__main__":
