@@ -19,17 +19,38 @@ The `egg` command prints a list of the Pokémon's egg groups.
 The `evo` command prints a list of the Pokémon's evolution chains, e.g.:
 ```
 $ py dex.py onix evo
-Onix --(Metal Coat on trade)--> Steelix
+Onix --(holding Metal Coat on trade)--> Steelix
 
-$ py dex.py gengar evo
-Gastly --(25)--> Haunter --(on trade)--> Gengar
+$ py dex.py haunter evo
+Gastly --(at lv 25)--> Haunter --(on trade)--> Gengar
 
-$ py dex.py Applin evo
-Applin --(Tart Apple)--> Flapple
-Applin --(Sweet Apple)--> Appletun
-Applin --(Syrupy Apple)--> Dipplin --(Dragon Cheer)--> Hydrapple
+$ py dex.py Eevee evo
+Eevee --(using Water Stone)--> Vaporeon
+Eevee --(using Thunder Stone)--> Jolteon
+Eevee --(using Fire Stone)--> Flareon
+Eevee --(with happiness 160 during the day)--> Espeon
+Eevee --(with happiness 160 during the night)--> Umbreon
+Eevee --(in Eterna Forest)--> Leafeon
+Eevee --(in Pinwheel Forest)--> Leafeon
+Eevee --(on Route 20)--> Leafeon
+Eevee --(using Leaf Stone)--> Leafeon
+Eevee --(on Route 217)--> Glaceon
+Eevee --(on Twist Mountain)--> Glaceon
+Eevee --(in Frost Cavern)--> Glaceon
+Eevee --(using Ice Stone)--> Glaceon
+Eevee --(knowing a Fairy-type move with affection 2)--> Sylveon
+Eevee --(knowing a Fairy-type move with happiness 160)--> Sylveon
 ```
 
-Currently, this only shows useful information for Pokémon that evolve on level-up,
-when given a consumable item (e.g. a Fire Stone), when holding an item (e.g.
-Steel Coat), when knowing a particular move (e.g. Dragon Cheer), and/or on trade.
+Currently, this only shows useful information for Pokémon that evolve in one or more
+of the following ways:
+* at a particular level,
+* when given a consumable item (e.g. a Fire Stone for Growlithe into Arcanine),
+* when holding an item (e.g. Steel Coat for Onix into Steelix),
+* when knowing a particular move (e.g. Dragon Cheer for Dipplin into Hydrapple),
+* when knowing a move of a particular type (e.g. Fairy),
+* in a particular location (e.g. Mount Lanakila),
+* with high friendship (e.g. Azurill into Marill),
+* with high affection,
+* at a particular time of day
+* on trade.
