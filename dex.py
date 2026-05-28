@@ -28,6 +28,7 @@ class Evolution:
     item: str | None
     known_move: str | None
     held_item: str | None
+    trade: bool
 
 
 def check_cache(category: str, filename: str) -> JSON | None:
@@ -74,7 +75,10 @@ def parse_individual_evo_chain(before: list[Evolution],
     held_item: str | None = None
     if details.get("held_item") is not None:
         held_item = details.get("held_item").get("name")
-    before.append(Evolution(name, lvl, item, known_move, held_item))
+    trade: bool = False
+    if details.get("trigger") is not None:
+        trade = details.get("trigger").get("name") == "trade"
+    before.append(Evolution(name, lvl, item, known_move, held_item, trade))
     if len(evolves_to.get("evolves_to")) != 0:
         parse_individual_evo_chain(before, evolves_to.get("evolves_to")[0])
     return before
@@ -101,7 +105,7 @@ def get_evolution_chain(entry: JSON) -> list[list[Evolution]]:
     output = []
     base_form = chain.get("chain").get("species").get("name")
     for evolves_to in chain.get("chain").get("evolves_to"):
-        sublist = [Evolution(base_form, 0, None, None, None)]
+        sublist = [Evolution(base_form, 0, None, None, None, False)]
         output.append(parse_individual_evo_chain(sublist, evolves_to))
     return output
 
@@ -115,11 +119,17 @@ def print_evo_chain(chain: list[Evolution]):
         if link.min_level is not None:
             transition_text = str(link.min_level)
         if link.item is not None:
-            transition_text += f"({link.item})"
+            transition_text += f"{link.item}"
         if link.known_move is not None:
-            transition_text += f"({link.known_move})"
+            transition_text += f"{link.known_move}"
         if link.held_item is not None:
-            transition_text += f"({link.held_item})"
+            transition_text += f"{link.held_item}"
+        if link.trade:
+            if transition_text != "":
+                transition_text += " "
+            transition_text += f"on trade"
+        if transition_text != "":
+            transition_text = f"({transition_text})"
         print(" --" + transition_text + "--> " + link.pkmn_name, end="")
     print()
 
