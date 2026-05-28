@@ -129,31 +129,27 @@ def retrieve_pkmn(name: str) -> JSON:
     return contents
 
 
-def get_formatted_pkmn_name(name: str) -> str:
-    contents = retrieve_pkmn(name)
-    names: list[JSON] = contents.get("names")
+def get_formatted_name(content: JSON) -> str:
+    names: list[JSON] = content.get("names")
     for locale in names:
         if locale.get("language").get("name") == "en":
             return locale.get("name")
-    return name.title()
+    return content.get("name", "Unknown").title()
+
+
+def get_formatted_pkmn_name(name: str) -> str:
+    contents = retrieve_pkmn(name)
+    return get_formatted_name(contents)
 
 
 def get_formatted_item_name(name: str) -> str:
     contents = retrieve_item(name)
-    names: list[JSON] = contents.get("names")
-    for locale in names:
-        if locale.get("language").get("name") == "en":
-            return locale.get("name")
-    return name.title()
+    return get_formatted_name(contents)
 
 
 def get_formatted_move_name(name: str) -> str:
     contents = retrieve_move(name)
-    names: list[JSON] = contents.get("names")
-    for locale in names:
-        if locale.get("language").get("name") == "en":
-            return locale.get("name")
-    return name.title()
+    return get_formatted_name(contents)
 
 
 def parse_individual_evo_chain(before: list[Evolution],
@@ -165,15 +161,19 @@ def parse_individual_evo_chain(before: list[Evolution],
     item: str | None = None
     if details.get("item") is not None:
         item = get_formatted_item_name(details.get("item").get("name"))
+
     known_move: str | None = None
     if details.get("known_move") is not None:
         known_move = get_formatted_move_name(details.get("known_move").get("name"))
+
     held_item: str | None = None
     if details.get("held_item") is not None:
         held_item = get_formatted_item_name(details.get("held_item").get("name"))
+
     trade: bool = False
     if details.get("trigger") is not None:
         trade = details.get("trigger").get("name") == "trade"
+
     before.append(Evolution(name, lvl, item, known_move, held_item, trade))
     if len(evolves_to.get("evolves_to")) != 0:
         parse_individual_evo_chain(before, evolves_to.get("evolves_to")[0])
