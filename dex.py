@@ -153,31 +153,36 @@ def get_formatted_move_name(name: str) -> str:
 
 
 def parse_individual_evo_chain(before: list[Evolution],
-                               evolves_to: dict[str, Any]) -> list[Evolution]:
+                               evolves_to: dict[str, Any]) -> list[list[Evolution]]:
     name: str = get_formatted_pkmn_name(evolves_to.get("species").get("name"))
-    details: dict[str, Any] = evolves_to.get("evolution_details")[
-        0]  # Some will have multiple, so this might be wrong
-    lvl: int = details.get("min_level", -1)
-    item: str | None = None
-    if details.get("item") is not None:
-        item = get_formatted_item_name(details.get("item").get("name"))
+    chains: list[list[Evolution]] = []
+    for details in evolves_to.get("evolution_details"):
+        lvl: int = details.get("min_level", -1)
+        item: str | None = None
+        if details.get("item") is not None:
+            item = get_formatted_item_name(details.get("item").get("name"))
 
-    known_move: str | None = None
-    if details.get("known_move") is not None:
-        known_move = get_formatted_move_name(details.get("known_move").get("name"))
+        known_move: str | None = None
+        if details.get("known_move") is not None:
+            known_move = get_formatted_move_name(details.get("known_move").get("name"))
 
-    held_item: str | None = None
-    if details.get("held_item") is not None:
-        held_item = get_formatted_item_name(details.get("held_item").get("name"))
+        held_item: str | None = None
+        if details.get("held_item") is not None:
+            held_item = get_formatted_item_name(details.get("held_item").get("name"))
 
-    trade: bool = False
-    if details.get("trigger") is not None:
-        trade = details.get("trigger").get("name") == "trade"
+        trade: bool = False
+        if details.get("trigger") is not None:
+            trade = details.get("trigger").get("name") == "trade"
 
-    before.append(Evolution(name, lvl, item, known_move, held_item, trade))
-    if len(evolves_to.get("evolves_to")) != 0:
-        parse_individual_evo_chain(before, evolves_to.get("evolves_to")[0])
-    return before
+        updated_list = before + [Evolution(name, lvl, item, known_move, held_item, trade)]
+        updated_chains = []
+        if len(evolves_to.get("evolves_to")) != 0:
+            for next_evo in evolves_to.get("evolves_to"):
+                updated_chains.extend(parse_individual_evo_chain(updated_list, next_evo))
+        else:
+            updated_chains = [updated_list]
+        chains.extend(updated_chains)
+    return chains
 
 
 def get_evolution_chain(entry: JSON) -> list[list[Evolution]]:
@@ -198,11 +203,11 @@ def get_evolution_chain(entry: JSON) -> list[list[Evolution]]:
             chain: JSON = response.json()
             cache_evo(chain)
 
-    output = []
+    output: list[list[Evolution]] = []
     base_form = get_formatted_pkmn_name(chain.get("chain").get("species").get("name"))
     for evolves_to in chain.get("chain").get("evolves_to"):
         sublist = [Evolution(base_form, 0, None, None, None, False)]
-        output.append(parse_individual_evo_chain(sublist, evolves_to))
+        output.extend(parse_individual_evo_chain(sublist, evolves_to))
     return output
 
 
