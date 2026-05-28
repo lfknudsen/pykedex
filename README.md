@@ -6,7 +6,7 @@ Data is retrieved from pokeapi.co, and the results of all requests are cached.
 ## Usage
 
 ```
-py dex.py <Pokémon name> [id|egg|evo]
+py dex.py [-v] <Pokémon name> [id|egg|evo]
 ```
 
 The Pokémon name is case insensitive.
@@ -16,7 +16,13 @@ National Pokédex number.
 
 The `egg` command prints a list of the Pokémon's egg groups.
 
-The `evo` command prints a list of the Pokémon's evolution chains, e.g.:
+The `evo` command prints a list of the Pokémon's evolution chains.
+
+The `-v` flag will print any HTTP requests being made. Can be used to verify caching.
+
+
+## Examples
+
 ```
 $ py dex.py onix evo
 Onix --(holding Metal Coat on trade)--> Steelix
@@ -40,6 +46,19 @@ Eevee --(in Frost Cavern)--> Glaceon
 Eevee --(using Ice Stone)--> Glaceon
 Eevee --(knowing a Fairy-type move with affection 2)--> Sylveon
 Eevee --(knowing a Fairy-type move with happiness 160)--> Sylveon
+
+$ py dex.py -v gligar evo
+MAKING HTTP REQUEST TO https://pokeapi.co/api/v2/pokemon-species/gligar/
+MAKING HTTP REQUEST TO https://pokeapi.co/api/v2/evolution-chain/104/
+MAKING HTTP REQUEST TO https://pokeapi.co/api/v2/pokemon-species/gliscor/
+MAKING HTTP REQUEST TO https://pokeapi.co/api/v2/item/razor-fang/
+Gligar --(holding Razor Fang during the night)--> Gliscor
+
+$ py dex.py -v glaceon evo
+Eevee --(on Route 217)--> Glaceon
+Eevee --(on Twist Mountain)--> Glaceon
+Eevee --(in Frost Cavern)--> Glaceon
+Eevee --(using Ice Stone)--> Glaceon
 ```
 
 Currently, this only shows useful information for Pokémon that evolve in one or more
