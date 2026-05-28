@@ -27,6 +27,7 @@ class Evolution:
     min_level: int | None
     item: str | None
     known_move: str | None
+    held_item: str | None
 
 
 def check_cache(category: str, filename: str) -> JSON | None:
@@ -70,7 +71,10 @@ def parse_individual_evo_chain(before: list[Evolution],
     known_move: str | None = None
     if details.get("known_move") is not None:
         known_move = details.get("known_move").get("name")
-    before.append(Evolution(name, lvl, item, known_move))
+    held_item: str | None = None
+    if details.get("held_item") is not None:
+        held_item = details.get("held_item").get("name")
+    before.append(Evolution(name, lvl, item, known_move, held_item))
     if len(evolves_to.get("evolves_to")) != 0:
         parse_individual_evo_chain(before, evolves_to.get("evolves_to")[0])
     return before
@@ -97,7 +101,7 @@ def get_evolution_chain(entry: JSON) -> list[list[Evolution]]:
     output = []
     base_form = chain.get("chain").get("species").get("name")
     for evolves_to in chain.get("chain").get("evolves_to"):
-        sublist = [Evolution(base_form, 0, None, None)]
+        sublist = [Evolution(base_form, 0, None, None, None)]
         output.append(parse_individual_evo_chain(sublist, evolves_to))
     return output
 
@@ -114,6 +118,8 @@ def print_evo_chain(chain: list[Evolution]):
             transition_text += f"({link.item})"
         if link.known_move is not None:
             transition_text += f"({link.known_move})"
+        if link.held_item is not None:
+            transition_text += f"({link.held_item})"
         print(" --" + transition_text + "--> " + link.pkmn_name, end="")
     print()
 
