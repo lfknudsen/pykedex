@@ -10,6 +10,8 @@ from dataclasses import dataclass
 CACHE_DIR: str = "cache"
 CACHE_SUBDIR_POKEMON: str = "pokémon"
 CACHE_SUBDIR_EVO: str = "evo"
+CACHE_SUBDIR_ITEMS: str = "items"
+CACHE_SUBDIR_MOVES: str = "moves"
 CACHE_FILE_EXT: str = ".json"
 CACHE_PATH_STR: str = os.path.join(os.path.dirname(__file__), CACHE_DIR)
 CACHE_PATH: Path = Path(CACHE_PATH_STR)
@@ -57,9 +59,45 @@ def cache_evo(new_entry: JSON):
     dump_json(output, new_entry)
 
 
+def cache_item(new_entry: JSON):
+    output = output_file(CACHE_SUBDIR_ITEMS, new_entry.get("name", "unknown"))
+    dump_json(output, new_entry)
+
+
+def cache_move(new_entry: JSON):
+    output = output_file(CACHE_SUBDIR_MOVES, new_entry.get("name", "unknown"))
+    dump_json(output, new_entry)
+
+
 def get_egg_groups(entry: JSON) -> list[str]:
     egg_groups: list[dict[str, str]] = entry.get("egg_groups")
     return [group.get("name") for group in egg_groups]
+
+
+def retrieve_item(name: str) -> JSON:
+    contents: JSON | None = check_cache(CACHE_SUBDIR_ITEMS, name)
+    if contents is None:
+        response: Response = httpx.get(f"https://pokeapi.co/api/v2/item/{name}/")
+        if response.is_error:
+            print(response.status_code)
+            exit(1)
+        else:
+            contents: JSON = response.json()
+            cache_item(contents)
+    return contents
+
+
+def retrieve_move(name: str) -> JSON:
+    contents: JSON | None = check_cache(CACHE_SUBDIR_MOVES, name)
+    if contents is None:
+        response: Response = httpx.get(f"https://pokeapi.co/api/v2/move/{name}/")
+        if response.is_error:
+            print(response.status_code)
+            exit(1)
+        else:
+            contents: JSON = response.json()
+            cache_move(contents)
+    return contents
 
 
 def retrieve_pkmn(name: str) -> JSON:
@@ -84,6 +122,24 @@ def get_formatted_pkmn_name(name: str) -> str:
     return name.title()
 
 
+def get_formatted_item_name(name: str) -> str:
+    contents = retrieve_item(name)
+    names: list[JSON] = contents.get("names")
+    for locale in names:
+        if locale.get("language").get("name") == "en":
+            return locale.get("name")
+    return name.title()
+
+
+def get_formatted_move_name(name: str) -> str:
+    contents = retrieve_move(name)
+    names: list[JSON] = contents.get("names")
+    for locale in names:
+        if locale.get("language").get("name") == "en":
+            return locale.get("name")
+    return name.title()
+
+
 def parse_individual_evo_chain(before: list[Evolution],
                                evolves_to: dict[str, Any]) -> list[Evolution]:
     name: str = get_formatted_pkmn_name(evolves_to.get("species").get("name"))
@@ -92,13 +148,13 @@ def parse_individual_evo_chain(before: list[Evolution],
     lvl: int = details.get("min_level", -1)
     item: str | None = None
     if details.get("item") is not None:
-        item = details.get("item").get("name")
+        item = get_formatted_item_name(details.get("item").get("name"))
     known_move: str | None = None
     if details.get("known_move") is not None:
-        known_move = details.get("known_move").get("name")
+        known_move = get_formatted_move_name(details.get("known_move").get("name"))
     held_item: str | None = None
     if details.get("held_item") is not None:
-        held_item = details.get("held_item").get("name")
+        held_item = get_formatted_item_name(details.get("held_item").get("name"))
     trade: bool = False
     if details.get("trigger") is not None:
         trade = details.get("trigger").get("name") == "trade"

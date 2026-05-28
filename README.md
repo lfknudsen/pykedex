@@ -19,15 +19,15 @@ The `egg` command prints a list of the Pokémon's egg groups.
 The `evo` command prints a list of the Pokémon's evolution chains, e.g.:
 ```
 $ py dex.py onix evo
-onix --(metal-coat on trade)--> steelix
+Onix --(Metal Coat on trade)--> Steelix
 
 $ py dex.py gengar evo
-gastly --(25)--> haunter --(on trade)--> gengar
+Gastly --(25)--> Haunter --(on trade)--> Gengar
 
 $ py dex.py Applin evo
-applin --(tart-apple)--> flapple
-applin --(sweet-apple)--> appletun
-applin --(syrupy-apple)--> dipplin --(dragon-cheer)--> hydrapple
+Applin --(Tart Apple)--> Flapple
+Applin --(Sweet Apple)--> Appletun
+Applin --(Syrupy Apple)--> Dipplin --(Dragon Cheer)--> Hydrapple
 ```
 
 Currently, this only shows useful information for Pokémon that evolve on level-up,
