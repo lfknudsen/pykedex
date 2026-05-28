@@ -12,11 +12,12 @@ CACHE_SUBDIR_POKEMON: str = "pokémon"
 CACHE_SUBDIR_EVO: str = "evo"
 CACHE_SUBDIR_ITEMS: str = "items"
 CACHE_SUBDIR_MOVES: str = "moves"
+CACHE_SUBDIR_LOCATIONS: str = "locations"
 CACHE_FILE_EXT: str = ".json"
 CACHE_PATH_STR: str = os.path.join(os.path.dirname(__file__), CACHE_DIR)
 CACHE_PATH: Path = Path(CACHE_PATH_STR)
 
-verbose = len(sys.argv) > 1 and sys.argv[1] == "-v"
+verbose = __name__ == "__main__" and len(sys.argv) > 1 and sys.argv[1] == "-v"
 
 
 def output_file(category: str, name: str) -> Path:
@@ -36,16 +37,19 @@ class Evolution:
     trade: bool
     min_happiness: int | None
     time_of_day: str | None
+    location: str | None
 
 
 @dataclass
 class Text:
     text: str = ""
 
-    def append(self, string: Any | None):
+    def append(self, prefix: str | None, string: Any | None):
         if string is not None:
             if self.text != "":
                 self.text += " "
+            if prefix is not None:
+                self.text += f"{prefix} "
             self.text += str(string)
 
     def finalise(self) -> str:
@@ -86,6 +90,11 @@ def cache_item(new_entry: JSON):
 
 def cache_move(new_entry: JSON):
     output = output_file(CACHE_SUBDIR_MOVES, new_entry.get("name", "unknown"))
+    dump_json(output, new_entry)
+
+
+def cache_location(new_entry: JSON):
+    output = output_file(CACHE_SUBDIR_LOCATIONS, new_entry.get("name", "unknown"))
     dump_json(output, new_entry)
 
 
@@ -132,6 +141,14 @@ def retrieve_pkmn(name: str) -> JSON:
     return contents
 
 
+def retrieve_location(name: str) -> JSON:
+    contents: JSON | None = check_cache(CACHE_SUBDIR_LOCATIONS, name)
+    if contents is None:
+        contents: JSON = request(f"https://pokeapi.co/api/v2/location/{name}/")
+        cache_location(contents)
+    return contents
+
+
 def get_formatted_name(content: JSON) -> str:
     names: list[JSON] = content.get("names")
     for locale in names:
@@ -152,6 +169,11 @@ def get_formatted_item_name(name: str) -> str:
 
 def get_formatted_move_name(name: str) -> str:
     contents = retrieve_move(name)
+    return get_formatted_name(contents)
+
+
+def get_formatted_location_name(name: str) -> str:
+    contents = retrieve_location(name)
     return get_formatted_name(contents)
 
 
@@ -181,6 +203,10 @@ def parse_individual_evo_chain(before: list[Evolution],
         if details.get("time_of_day") is not None and details.get("time_of_day") != "":
             time_of_day = details.get("time_of_day")
 
+        location: str | None = None
+        if details.get("location") is not None:
+            location = get_formatted_location_name(details.get("location").get("name"))
+
         trade: bool = False
         if details.get("trigger") is not None:
             trade = details.get("trigger").get("name") == "trade"
@@ -193,6 +219,7 @@ def parse_individual_evo_chain(before: list[Evolution],
                                            trade,
                                            min_happiness,
                                            time_of_day,
+                                           location,
                                            )]
         updated_chains = []
         if len(evolves_to.get("evolves_to")) != 0:
@@ -233,6 +260,7 @@ def get_evolution_chain(entry: JSON) -> list[list[Evolution]]:
                                  False,
                                  None,
                                  None,
+                                 None,
                                  )
         sublist = [initial_form]
         output.extend(parse_individual_evo_chain(sublist, evolves_to))
@@ -245,17 +273,19 @@ def print_evo_chain(chain: list[Evolution]):
     print(chain.pop(0).pkmn_name, end="")
     for link in chain:
         transition_text: Text = Text()
-        transition_text.append(link.min_level)
-        transition_text.append(link.item)
-        transition_text.append(link.known_move)
-        transition_text.append(link.held_item)
-        if link.min_happiness is not None:
-            transition_text.append(f"with happiness {link.min_happiness}")
-        if link.time_of_day is not None:
-            transition_text.append(f"during the {link.time_of_day}")
-
+        transition_text.append("at lv", link.min_level)
+        transition_text.append("using", link.item)
+        transition_text.append("knowing", link.known_move)
+        transition_text.append("holding", link.held_item)
+        transition_text.append("with happiness", link.min_happiness)
+        transition_text.append("during the", link.time_of_day)
+        if link.location is not None:
+            preposition = "in"
+            if link.location.startswith(("Route", "Mount")) or link.location.endswith("Mountain"):
+                preposition = "on"
+            transition_text.append(preposition, link.location)
         if link.trade:
-            transition_text.append("on trade")
+            transition_text.append(None, "on trade")
         print(" --" + transition_text.finalise() + "--> " + link.pkmn_name, end="")
     print()
 
