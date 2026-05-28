@@ -1,10 +1,11 @@
-﻿from typing import Any
+﻿import sys
+from typing import Any
 
 from classes import Evolution, JSON, Text
 from fmt import (get_column_widths, get_formatted_item_name,
                  get_formatted_location_name, get_formatted_move_name,
                  get_formatted_pkmn_name, get_formatted_type_name)
-from net import retrieve_evo
+from net import retrieve_evo, retrieve_pkmn
 
 
 def parse_individual_evo_chain(before: list[Evolution],
@@ -172,3 +173,16 @@ def print_evo_chains(name: str, contents: JSON, verbose: bool):
                 to_keep.append(chain)
                 break
     [print(evo) for evo in format_evo_chains(to_keep)]
+
+def main():
+    next_arg = 1
+    verbose = len(sys.argv) > next_arg and sys.argv[next_arg] == "-v"
+    if verbose:
+        next_arg += 1
+    name = sys.argv.pop(next_arg)
+    contents: JSON = retrieve_pkmn(name, verbose)
+    print_evo_chains(name, contents, verbose)
+
+
+if __name__ == "__main__":
+    main()
