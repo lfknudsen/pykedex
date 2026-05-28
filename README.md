@@ -1,7 +1,7 @@
-﻿# Pykédex
+# Pykédex
 
 A simple CLI tool for quickly getting information about specific Pokémon.
-Data is retrieved from pokeapi.co, and the results of all requests are cached.
+Data is retrieved from https://www.pokeapi.co, and the results of all requests are cached.
 
 ## Usage
 
@@ -19,6 +19,11 @@ The `egg` command prints a list of the Pokémon's egg groups.
 The `evo` command prints a list of the Pokémon's evolution chains.
 
 The `-v` flag will print any HTTP requests being made. Can be used to verify caching.
+
+The following short-hand command is also supported:
+```
+py evo.py [-v] <Pokémon name>
+```
 
 
 ## Examples
