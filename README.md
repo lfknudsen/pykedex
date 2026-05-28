@@ -22,10 +22,6 @@ $ py dex.py tyranitar evo
 larvitar --30--> pupitar --55--> tyranitar
 ```
 
-Currently, this only shows useful information for Pokémon that evolve on level-up:
-```
-$ py dex.py Applin evo
-applin --None--> flapple
-applin --None--> appletun
-applin --None--> dipplin --None--> hydrapple
-```
+Currently, this only shows useful information for Pokémon that evolve on level-up,
+when given a consumable item (e.g. a Fire Stone), when holding an item (e.g.
+Steel Coat), and/or when knowing a particular move (e.g. Dragon Cheer).
