@@ -1,0 +1,174 @@
+﻿from typing import Any
+
+from classes import Evolution, JSON, Text
+from fmt import (get_column_widths, get_formatted_item_name,
+                 get_formatted_location_name, get_formatted_move_name,
+                 get_formatted_pkmn_name, get_formatted_type_name)
+from net import retrieve_evo
+
+
+def parse_individual_evo_chain(before: list[Evolution],
+                               evolves_to: dict[str, Any],
+                               verbose: bool) -> list[list[Evolution]]:
+    name: str = get_formatted_pkmn_name(evolves_to.get("species").get("name"),
+                                        verbose)
+    chains: list[list[Evolution]] = []
+    for details in evolves_to.get("evolution_details"):
+        lvl: int = details.get("min_level", -1)
+        item: str | None = None
+        if details.get("item") is not None:
+            item = get_formatted_item_name(details.get("item").get("name"),
+                                           verbose)
+
+        known_move: str | None = None
+        if details.get("known_move") is not None:
+            known_move = get_formatted_move_name(details.get("known_move").get("name"),
+                                                 verbose)
+
+        known_move_type: str | None = None
+        if details.get("known_move_type") is not None:
+            known_move_type = get_formatted_type_name(details.get("known_move_type").get("name"),
+                                                      verbose)
+
+        held_item: str | None = None
+        if details.get("held_item") is not None:
+            held_item = get_formatted_item_name(details.get("held_item").get("name"),
+                                                verbose)
+
+        min_happiness: int | None = None
+        if details.get("min_happiness") is not None:
+            min_happiness = details.get("min_happiness")
+
+        time_of_day: str | None = None
+        if details.get("time_of_day") is not None and details.get("time_of_day") != "":
+            time_of_day = details.get("time_of_day")
+
+        location: str | None = None
+        if details.get("location") is not None:
+            location = get_formatted_location_name(details.get("location").get("name"),
+                                                   verbose)
+
+        min_affection: int | None = None
+        if details.get("min_affection") is not None:
+            min_affection = details.get("min_affection")
+
+        trade: bool = False
+        if details.get("trigger") is not None:
+            trade = details.get("trigger").get("name") == "trade"
+
+        updated_list = before + [Evolution(name,
+                                           lvl,
+                                           item,
+                                           known_move,
+                                           held_item,
+                                           trade,
+                                           min_happiness,
+                                           time_of_day,
+                                           location,
+                                           min_affection,
+                                           known_move_type,
+                                           )]
+        updated_chains = []
+        if len(evolves_to.get("evolves_to")) != 0:
+            for next_evo in evolves_to.get("evolves_to"):
+                updated_chains.extend(parse_individual_evo_chain(updated_list, next_evo, verbose))
+        else:
+            updated_chains = [updated_list]
+        chains.extend(updated_chains)
+    return chains
+
+
+def get_evolution_chain(pkmn: JSON, verbose: bool = False) -> list[list[Evolution]]:
+    chain_entry: dict[str, str] | None = pkmn.get("evolution_chain", None)
+    if chain_entry is None:
+        return []
+    chain_url: str | None = chain_entry.get("url", None)
+    if chain_url is None:
+        return []
+    chain: JSON = retrieve_evo(chain_url, verbose)
+
+    output: list[list[Evolution]] = []
+    base_form = get_formatted_pkmn_name(chain.get("chain").get("species").get("name"),
+                                        verbose)
+    for evolves_to in chain.get("chain").get("evolves_to"):
+        initial_form = Evolution(base_form,
+                                 None,
+                                 None,
+                                 None,
+                                 None,
+                                 False,
+                                 None,
+                                 None,
+                                 None,
+                                 None,
+                                 None,
+                                 )
+        sublist = [initial_form]
+        output.extend(parse_individual_evo_chain(sublist, evolves_to, verbose))
+    return output
+
+
+def build_transition_text(link: Evolution) -> str:
+    transition_text: Text = Text()
+    transition_text.append("at lv", link.min_level)
+    transition_text.append("using", link.item)
+    transition_text.append("knowing", link.known_move)
+    if link.known_move_type is not None:
+        determiner: str = "a"
+        if link.known_move_type[0] in "aeiou":
+            determiner = "an"
+        transition_text.append(f"knowing {determiner}",
+                               f"{link.known_move_type}-type move")
+    transition_text.append("holding", link.held_item)
+    transition_text.append("with happiness", link.min_happiness)
+    transition_text.append("during the", link.time_of_day)
+    if link.location is not None:
+        preposition: str = "in"
+        on_words: tuple[str, ...] = ("Route", "Mount", "Road", "Path", "Mountain")
+        if link.location.startswith(on_words) or link.location.endswith(on_words):
+            preposition = "on"
+        transition_text.append(preposition, link.location)
+
+    transition_text.append("with affection", link.min_affection)
+
+    if link.trade:
+        transition_text.append(None, "on trade")
+
+    return transition_text.finalise()
+
+
+def generate_evo_strings(chain: list[Evolution]) -> list[str]:
+    if len(chain) == 0:
+        return []
+    output: list[str] = [chain.pop(0).pkmn_name]
+    for link in chain:
+        output.append(f"--{build_transition_text(link)}-->")
+        output.append(link.pkmn_name)
+    return output
+
+
+def format_evo_chains(chains: list[list[Evolution]]) -> list[str]:
+    chain_strings: list[list[str]] = []
+    for chain in chains:
+        strings: list[str] = generate_evo_strings(chain)
+        chain_strings.append(strings)
+    widths = get_column_widths(chain_strings)
+    output: list[str] = []
+    for row in chain_strings:
+        sub_output: list[str] = []
+        for column_idx in range(0, len(row)):
+            left_justified = row[column_idx].ljust(widths[column_idx])
+            sub_output.append(left_justified)
+        concatenated = " ".join(sub_output)
+        output.append(concatenated)
+    return output
+
+
+def print_evo_chains(name: str, contents: JSON, verbose: bool):
+    to_keep: list[list[Evolution]] = []
+    for chain in get_evolution_chain(contents, verbose):
+        for subchain in chain:
+            if subchain.pkmn_name.casefold() == name.casefold():
+                to_keep.append(chain)
+                break
+    [print(evo) for evo in format_evo_chains(to_keep)]
