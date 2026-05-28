@@ -109,12 +109,18 @@ def main():
             contents: JSON = response.json()
             cache_species(contents)
 
-    if len(sys.argv) == 1:
-        sys.argv.append("id")
-    command = sys.argv.pop(1).lower().strip()
+    command: str = "id"
+    if len(sys.argv) > 1:
+        command = sys.argv.pop(1).lower().strip()
     match command:
-        case "id":
-            print(contents.get("id"))
+        case "id" | "no" | "nr" | "num":
+            dex_num_entries: list[JSON] = contents.get("pokedex_numbers")
+            for entry in dex_num_entries:
+                if entry.get("pokedex").get("name") == "national":
+                    print(entry.get("entry_number"))
+                    exit(0)
+            print("Not found")
+            exit(1)
         case "egg" | "eggs" | "egg group" | "egg groups" | "egg-group" | "egg-groups" | "group":
             [print(group) for group in get_egg_groups(contents)]
         case "evo":
