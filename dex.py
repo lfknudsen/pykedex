@@ -299,7 +299,11 @@ def main():
         case "egg" | "eggs" | "egg group" | "egg groups" | "egg-group" | "egg-groups" | "group":
             [print(group) for group in get_egg_groups(contents)]
         case "evo":
-            [print_evo_chain(chain) for chain in get_evolution_chain(contents)]
+            for chain in get_evolution_chain(contents):
+                for subchain in chain:
+                    if subchain.pkmn_name.casefold() == name.casefold():
+                        print_evo_chain(chain)
+                        break
 
 
 if __name__ == "__main__":
