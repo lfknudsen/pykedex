@@ -31,20 +31,20 @@ $ py dex.py haunter evo
 Gastly --(at lv 25)--> Haunter --(on trade)--> Gengar
 
 $ py dex.py Eevee evo
-Eevee --(using Water Stone)--> Vaporeon
-Eevee --(using Thunder Stone)--> Jolteon
-Eevee --(using Fire Stone)--> Flareon
-Eevee --(with happiness 160 during the day)--> Espeon
-Eevee --(with happiness 160 during the night)--> Umbreon
-Eevee --(in Eterna Forest)--> Leafeon
-Eevee --(in Pinwheel Forest)--> Leafeon
-Eevee --(on Route 20)--> Leafeon
-Eevee --(using Leaf Stone)--> Leafeon
-Eevee --(on Route 217)--> Glaceon
-Eevee --(on Twist Mountain)--> Glaceon
-Eevee --(in Frost Cavern)--> Glaceon
-Eevee --(using Ice Stone)--> Glaceon
-Eevee --(knowing a Fairy-type move with affection 2)--> Sylveon
+Eevee --(using Water Stone)-->                            Vaporeon
+Eevee --(using Thunder Stone)-->                          Jolteon 
+Eevee --(using Fire Stone)-->                             Flareon 
+Eevee --(with happiness 160 during the day)-->            Espeon  
+Eevee --(with happiness 160 during the night)-->          Umbreon 
+Eevee --(in Eterna Forest)-->                             Leafeon 
+Eevee --(in Pinwheel Forest)-->                           Leafeon 
+Eevee --(on Route 20)-->                                  Leafeon 
+Eevee --(using Leaf Stone)-->                             Leafeon 
+Eevee --(on Route 217)-->                                 Glaceon 
+Eevee --(on Twist Mountain)-->                            Glaceon 
+Eevee --(in Frost Cavern)-->                              Glaceon 
+Eevee --(using Ice Stone)-->                              Glaceon 
+Eevee --(knowing a Fairy-type move with affection 2)-->   Sylveon 
 Eevee --(knowing a Fairy-type move with happiness 160)--> Sylveon
 
 $ py dex.py -v gligar evo
@@ -55,10 +55,10 @@ MAKING HTTP REQUEST TO https://pokeapi.co/api/v2/item/razor-fang/
 Gligar --(holding Razor Fang during the night)--> Gliscor
 
 $ py dex.py -v glaceon evo
-Eevee --(on Route 217)--> Glaceon
+Eevee --(on Route 217)-->      Glaceon
 Eevee --(on Twist Mountain)--> Glaceon
-Eevee --(in Frost Cavern)--> Glaceon
-Eevee --(using Ice Stone)--> Glaceon
+Eevee --(in Frost Cavern)-->   Glaceon
+Eevee --(using Ice Stone)-->   Glaceon
 ```
 
 Currently, this only shows useful information for Pokémon that evolve in one or more
