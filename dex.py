@@ -21,6 +21,7 @@ def output_file(category: str, name: str) -> Path:
 
 type JSON = dict[str, Any]
 
+
 @dataclass
 class Evolution:
     pkmn_name: str
@@ -61,10 +62,33 @@ def get_egg_groups(entry: JSON) -> list[str]:
     return [group.get("name") for group in egg_groups]
 
 
+def retrieve_pkmn(name: str) -> JSON:
+    contents: JSON | None = check_cache(CACHE_SUBDIR_POKEMON, name)
+    if contents is None:
+        response: Response = httpx.get(f"https://pokeapi.co/api/v2/pokemon-species/{name}/")
+        if response.is_error:
+            print(response.status_code)
+            exit(1)
+        else:
+            contents: JSON = response.json()
+            cache_species(contents)
+    return contents
+
+
+def get_formatted_pkmn_name(name: str) -> str:
+    contents = retrieve_pkmn(name)
+    names: list[JSON] = contents.get("names")
+    for locale in names:
+        if locale.get("language").get("name") == "en":
+            return locale.get("name")
+    return name.title()
+
+
 def parse_individual_evo_chain(before: list[Evolution],
-                               evolves_to: dict[str,Any]) -> list[Evolution]:
-    name: str = evolves_to.get("species").get("name")
-    details: dict[str, Any] = evolves_to.get("evolution_details")[0] # Some will have multiple, so this is wrong
+                               evolves_to: dict[str, Any]) -> list[Evolution]:
+    name: str = get_formatted_pkmn_name(evolves_to.get("species").get("name"))
+    details: dict[str, Any] = evolves_to.get("evolution_details")[
+        0]  # Some will have multiple, so this might be wrong
     lvl: int = details.get("min_level", -1)
     item: str | None = None
     if details.get("item") is not None:
@@ -103,7 +127,7 @@ def get_evolution_chain(entry: JSON) -> list[list[Evolution]]:
             cache_evo(chain)
 
     output = []
-    base_form = chain.get("chain").get("species").get("name")
+    base_form = get_formatted_pkmn_name(chain.get("chain").get("species").get("name"))
     for evolves_to in chain.get("chain").get("evolves_to"):
         sublist = [Evolution(base_form, 0, None, None, None, False)]
         output.append(parse_individual_evo_chain(sublist, evolves_to))
@@ -136,15 +160,7 @@ def print_evo_chain(chain: list[Evolution]):
 
 def main():
     name = sys.argv.pop(1)
-    contents: JSON | None = check_cache(CACHE_SUBDIR_POKEMON, name)
-    if contents is None:
-        response: Response = httpx.get(f"https://pokeapi.co/api/v2/pokemon-species/{name}/")
-        if response.is_error:
-            print(response.status_code)
-            exit(1)
-        else:
-            contents: JSON = response.json()
-            cache_species(contents)
+    contents: JSON = retrieve_pkmn(name)
 
     command: str = "id"
     if len(sys.argv) > 1:
