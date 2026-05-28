@@ -1,119 +1,14 @@
 ﻿import sys
 from typing import Any
-import httpx
-from httpx import Response
-from dataclasses import dataclass
 
-from caching import CACHE_SUBDIR_EVO, CACHE_SUBDIR_ITEMS, CACHE_SUBDIR_LOCATIONS, \
-    CACHE_SUBDIR_MOVES, \
-    CACHE_SUBDIR_POKEMON, \
-    CACHE_SUBDIR_TYPES, cache_evo, cache_item, \
-    cache_location, cache_move, cache_species, \
-    check_cache
-
-verbose = __name__ == "__main__" and len(sys.argv) > 1 and sys.argv[1] == "-v"
-
-type JSON = dict[str, Any]
-
-
-@dataclass
-class Evolution:
-    pkmn_name: str
-    min_level: int | None
-    item: str | None
-    known_move: str | None
-    held_item: str | None
-    trade: bool
-    min_happiness: int | None
-    time_of_day: str | None
-    location: str | None
-    min_affection: int | None
-    known_move_type: str | None
-
-
-@dataclass
-class Text:
-    text: str = ""
-
-    def append(self, prefix: str | None, string: Any | None):
-        if string is not None:
-            if self.text != "":
-                self.text += " "
-            if prefix is not None:
-                self.text += f"{prefix} "
-            self.text += str(string)
-
-    def finalise(self) -> str:
-        if self.text != "":
-            self.text = f"({self.text})"
-        return self.text
-
-
-def request(url: str) -> JSON:
-    if verbose:
-        print(f"MAKING HTTP REQUEST TO {url}")
-    response: Response = httpx.get(url)
-    if response.is_error:
-        print("Error: Status code", response.status_code)
-        exit(1)
-    try:
-        return response.json()
-    except Exception as e:
-        print("Could not parse JSON: ", str(e))
-        exit(1)
+from net import retrieve_evo, retrieve_item, retrieve_location, retrieve_move, retrieve_pkmn, \
+    retrieve_type
+from classes import Evolution, JSON, Text
 
 
 def get_egg_groups(entry: JSON) -> list[str]:
     egg_groups: list[dict[str, str]] = entry.get("egg_groups")
     return [group.get("name") for group in egg_groups]
-
-
-def retrieve_item(name: str) -> JSON:
-    contents: JSON | None = check_cache(CACHE_SUBDIR_ITEMS, name)
-    if contents is None:
-        contents: JSON = request(f"https://pokeapi.co/api/v2/item/{name}/")
-        cache_item(contents)
-    return contents
-
-
-def retrieve_move(name: str) -> JSON:
-    contents: JSON | None = check_cache(CACHE_SUBDIR_MOVES, name)
-    if contents is None:
-        contents: JSON = request(f"https://pokeapi.co/api/v2/move/{name}/")
-        cache_move(contents)
-    return contents
-
-
-def retrieve_type(name: str) -> JSON:
-    contents: JSON | None = check_cache(CACHE_SUBDIR_TYPES, name)
-    if contents is None:
-        contents: JSON = request(f"https://pokeapi.co/api/v2/type/{name}/")
-        cache_move(contents)
-    return contents
-
-
-def retrieve_pkmn(name: str) -> JSON:
-    contents: JSON | None = check_cache(CACHE_SUBDIR_POKEMON, name)
-    if contents is None:
-        contents: JSON = request(f"https://pokeapi.co/api/v2/pokemon-species/{name}/")
-        cache_species(contents)
-    return contents
-
-
-def retrieve_location(name: str) -> JSON:
-    contents: JSON | None = check_cache(CACHE_SUBDIR_LOCATIONS, name)
-    if contents is None:
-        contents: JSON = request(f"https://pokeapi.co/api/v2/location/{name}/")
-        cache_location(contents)
-    return contents
-
-
-def retrieve_evo(name: str) -> JSON:
-    contents: JSON | None = check_cache(CACHE_SUBDIR_EVO, name)
-    if contents is None:
-        contents: JSON = request(f"https://pokeapi.co/api/v2/location/{name}/")
-        cache_location(contents)
-    return contents
 
 
 def get_formatted_name(content: JSON) -> str:
@@ -213,18 +108,14 @@ def parse_individual_evo_chain(before: list[Evolution],
     return chains
 
 
-def get_evolution_chain(pkmn: JSON) -> list[list[Evolution]]:
+def get_evolution_chain(pkmn: JSON, verbose: bool = False) -> list[list[Evolution]]:
     chain_entry: dict[str, str] | None = pkmn.get("evolution_chain", None)
     if chain_entry is None:
         return []
     chain_url: str | None = chain_entry.get("url", None)
     if chain_url is None:
         return []
-    chain_id = str(chain_url.rsplit("/", 1)[0])
-    chain: JSON | None = check_cache(CACHE_SUBDIR_EVO, chain_id)
-    if chain is None:
-        chain = request(chain_url)
-        cache_evo(chain)
+    chain: JSON = retrieve_evo(chain_url, verbose)
 
     output: list[list[Evolution]] = []
     base_form = get_formatted_pkmn_name(chain.get("chain").get("species").get("name"))
@@ -279,14 +170,16 @@ def print_evo_chain(chain: list[Evolution]):
 
 
 def main():
+    next_arg = 1
+    verbose = len(sys.argv) > next_arg and sys.argv[next_arg] == "-v"
     if verbose:
-        sys.argv.pop(1)
-    name = sys.argv.pop(1)
-    contents: JSON = retrieve_pkmn(name)
+        next_arg += 1
+    name = sys.argv.pop(next_arg)
+    contents: JSON = retrieve_pkmn(name, verbose)
 
     command: str = "id"
-    if len(sys.argv) > 1:
-        command = sys.argv.pop(1).lower().strip()
+    if len(sys.argv) > next_arg:
+        command = sys.argv.pop(next_arg).lower().strip()
     match command:
         case "id" | "no" | "nr" | "num":
             dex_num_entries: list[JSON] = contents.get("pokedex_numbers")
@@ -296,10 +189,10 @@ def main():
                     exit(0)
             print("Not found")
             exit(1)
-        case "egg" | "eggs" | "egg group" | "egg groups" | "egg-group" | "egg-groups" | "group":
-            [print(group) for group in get_egg_groups(contents)]
+        case "egg" | "eggs" | "egg group" | "egg groups" | "egg-group" | "egg-groups" | "group" | "groups":
+            [print(group.title()) for group in get_egg_groups(contents)]
         case "evo":
-            for chain in get_evolution_chain(contents):
+            for chain in get_evolution_chain(contents, verbose):
                 for subchain in chain:
                     if subchain.pkmn_name.casefold() == name.casefold():
                         print_evo_chain(chain)

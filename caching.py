@@ -1,9 +1,7 @@
 ﻿import json
 import os
 from pathlib import Path
-from typing import Any
-
-type JSON = dict[str, Any]
+from classes import JSON
 
 CACHE_DIR: str = "cache"
 CACHE_SUBDIR_POKEMON: str = "pokémon"
