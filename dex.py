@@ -16,6 +16,7 @@ CACHE_FILE_EXT: str = ".json"
 CACHE_PATH_STR: str = os.path.join(os.path.dirname(__file__), CACHE_DIR)
 CACHE_PATH: Path = Path(CACHE_PATH_STR)
 
+verbose = len(sys.argv) > 1 and sys.argv[1] == "-v"
 
 def output_file(category: str, name: str) -> Path:
     return Path(os.path.join(CACHE_PATH_STR, category, name + CACHE_FILE_EXT))
@@ -243,6 +244,8 @@ def print_evo_chain(chain: list[Evolution]):
 
 
 def main():
+    if verbose:
+        sys.argv.pop(1)
     name = sys.argv.pop(1)
     contents: JSON = retrieve_pkmn(name)
 
