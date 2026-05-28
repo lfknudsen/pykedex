@@ -5,6 +5,7 @@ from typing import Any
 from pathlib import Path
 import httpx
 from httpx import Response
+from dataclasses import dataclass
 
 CACHE_DIR: str = "cache"
 CACHE_SUBDIR_POKEMON: str = "pokémon"
@@ -19,6 +20,12 @@ def output_file(category: str, name: str) -> Path:
 
 
 type JSON = dict[str, Any]
+
+@dataclass
+class Evolution:
+    pkmn_name: str
+    min_level: int | None
+    item: str | None
 
 
 def check_cache(category: str, filename: str) -> JSON | None:
@@ -51,18 +58,21 @@ def get_egg_groups(entry: JSON) -> list[str]:
     return [group.get("name") for group in egg_groups]
 
 
-def parse_individual_evo_chain(before: list[tuple[str, int]],
-                               evolves_to: dict[str,Any]) -> list[tuple[str, int]]:
+def parse_individual_evo_chain(before: list[Evolution],
+                               evolves_to: dict[str,Any]) -> list[Evolution]:
     name: str = evolves_to.get("species").get("name")
     details: dict[str, Any] = evolves_to.get("evolution_details")[0] # Some will have multiple, so this is wrong
     lvl: int = details.get("min_level", -1)
-    before.append((name, lvl))
+    item: str | None = None
+    if details.get("item") is not None:
+        item = details.get("item").get("name")
+    before.append(Evolution(name, lvl, item))
     if len(evolves_to.get("evolves_to")) != 0:
         parse_individual_evo_chain(before, evolves_to.get("evolves_to")[0])
     return before
 
 
-def get_evolution_chain(entry: JSON) -> list[list[tuple[str, int]]]:
+def get_evolution_chain(entry: JSON) -> list[list[Evolution]]:
     chain_entry: dict[str, str] | None = entry.get("evolution_chain", None)
     if chain_entry is None:
         return []
@@ -83,17 +93,22 @@ def get_evolution_chain(entry: JSON) -> list[list[tuple[str, int]]]:
     output = []
     base_form = chain.get("chain").get("species").get("name")
     for evolves_to in chain.get("chain").get("evolves_to"):
-        sublist = [(base_form, 0)]
+        sublist = [Evolution(base_form, 0, None)]
         output.append(parse_individual_evo_chain(sublist, evolves_to))
     return output
 
 
-def print_evo_chain(chain: list[tuple[str,int]]):
+def print_evo_chain(chain: list[Evolution]):
     if len(chain) == 0:
         return
-    print(chain.pop(0)[0], end="")
+    print(chain.pop(0).pkmn_name, end="")
     for link in chain:
-        print(" --" + str(link[1]) + "--> " + link[0], end="")
+        transition_text: str = ""
+        if link.min_level is not None:
+            transition_text = str(link.min_level)
+        if link.item is not None:
+            transition_text += f"({link.item})"
+        print(" --" + transition_text + "--> " + link.pkmn_name, end="")
     print()
 
 
