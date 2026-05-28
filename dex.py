@@ -13,6 +13,7 @@ CACHE_SUBDIR_EVO: str = "evo"
 CACHE_SUBDIR_ITEMS: str = "items"
 CACHE_SUBDIR_MOVES: str = "moves"
 CACHE_SUBDIR_LOCATIONS: str = "locations"
+CACHE_SUBDIR_TYPES: str = "types"
 CACHE_FILE_EXT: str = ".json"
 CACHE_PATH_STR: str = os.path.join(os.path.dirname(__file__), CACHE_DIR)
 CACHE_PATH: Path = Path(CACHE_PATH_STR)
@@ -39,6 +40,7 @@ class Evolution:
     time_of_day: str | None
     location: str | None
     min_affection: int | None
+    known_move_type: str | None
 
 
 @dataclass
@@ -99,6 +101,11 @@ def cache_location(new_entry: JSON):
     dump_json(output, new_entry)
 
 
+def cache_type(new_entry: JSON):
+    output = output_file(CACHE_SUBDIR_TYPES, new_entry.get("name", "unknown"))
+    dump_json(output, new_entry)
+
+
 def request(url: str) -> JSON:
     if verbose:
         print(f"MAKING HTTP REQUEST TO {url}")
@@ -130,6 +137,14 @@ def retrieve_move(name: str) -> JSON:
     contents: JSON | None = check_cache(CACHE_SUBDIR_MOVES, name)
     if contents is None:
         contents: JSON = request(f"https://pokeapi.co/api/v2/move/{name}/")
+        cache_move(contents)
+    return contents
+
+
+def retrieve_type(name: str) -> JSON:
+    contents: JSON | None = check_cache(CACHE_SUBDIR_TYPES, name)
+    if contents is None:
+        contents: JSON = request(f"https://pokeapi.co/api/v2/type/{name}/")
         cache_move(contents)
     return contents
 
@@ -173,6 +188,11 @@ def get_formatted_move_name(name: str) -> str:
     return get_formatted_name(contents)
 
 
+def get_formatted_type_name(name: str) -> str:
+    contents = retrieve_type(name)
+    return get_formatted_name(contents)
+
+
 def get_formatted_location_name(name: str) -> str:
     contents = retrieve_location(name)
     return get_formatted_name(contents)
@@ -191,6 +211,10 @@ def parse_individual_evo_chain(before: list[Evolution],
         known_move: str | None = None
         if details.get("known_move") is not None:
             known_move = get_formatted_move_name(details.get("known_move").get("name"))
+
+        known_move_type: str | None = None
+        if details.get("known_move_type") is not None:
+            known_move_type = get_formatted_type_name(details.get("known_move_type").get("name"))
 
         held_item: str | None = None
         if details.get("held_item") is not None:
@@ -226,6 +250,7 @@ def parse_individual_evo_chain(before: list[Evolution],
                                            time_of_day,
                                            location,
                                            min_affection,
+                                           known_move_type,
                                            )]
         updated_chains = []
         if len(evolves_to.get("evolves_to")) != 0:
@@ -268,6 +293,7 @@ def get_evolution_chain(entry: JSON) -> list[list[Evolution]]:
                                  None,
                                  None,
                                  None,
+                                 None,
                                  )
         sublist = [initial_form]
         output.extend(parse_individual_evo_chain(sublist, evolves_to))
@@ -283,6 +309,12 @@ def print_evo_chain(chain: list[Evolution]):
         transition_text.append("at lv", link.min_level)
         transition_text.append("using", link.item)
         transition_text.append("knowing", link.known_move)
+        if link.known_move_type is not None:
+            determiner = "a"
+            if link.known_move_type[0] in "aeiou":
+                determiner = "an"
+            transition_text.append(f"knowing {determiner}",
+                                   f"{link.known_move_type}-type move")
         transition_text.append("holding", link.held_item)
         transition_text.append("with happiness", link.min_happiness)
         transition_text.append("during the", link.time_of_day)
