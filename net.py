@@ -2,7 +2,7 @@
 from httpx import Response
 from caching import CACHE_SUBDIR_EVO, CACHE_SUBDIR_ITEMS, CACHE_SUBDIR_LOCATIONS, \
     CACHE_SUBDIR_MOVES, \
-    CACHE_SUBDIR_POKEMON, \
+    CACHE_SUBDIR_SPECIES, \
     CACHE_SUBDIR_TYPES, cache_evo, cache_item, \
     cache_location, cache_move, cache_species, \
     cache_type, check_cache
@@ -47,7 +47,7 @@ def retrieve_type(name: str, verbose: bool) -> JSON:
 
 
 def retrieve_pkmn(name: str, verbose: bool) -> JSON:
-    contents: JSON | None = check_cache(CACHE_SUBDIR_POKEMON, name)
+    contents: JSON | None = check_cache(CACHE_SUBDIR_SPECIES, name)
     if contents is None:
         contents: JSON = request(f"https://pokeapi.co/api/v2/pokemon-species/{name}/", verbose)
         cache_species(contents)

@@ -4,7 +4,7 @@ from pathlib import Path
 from classes import JSON
 
 CACHE_DIR: str = "cache"
-CACHE_SUBDIR_POKEMON: str = "pokémon"
+CACHE_SUBDIR_SPECIES: str = "species"
 CACHE_SUBDIR_EVO: str = "evo"
 CACHE_SUBDIR_ITEMS: str = "items"
 CACHE_SUBDIR_MOVES: str = "moves"
@@ -33,7 +33,7 @@ def dump_json(filename: Path, json_contents: JSON):
 
 
 def cache_species(new_entry: JSON):
-    output = output_file(CACHE_SUBDIR_POKEMON, new_entry.get("name", "unknown"))
+    output = output_file(CACHE_SUBDIR_SPECIES, new_entry.get("name", "unknown"))
     dump_json(output, new_entry)
 
 
