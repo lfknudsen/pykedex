@@ -10,6 +10,7 @@ CACHE_SUBDIR_ITEMS: str = "items"
 CACHE_SUBDIR_MOVES: str = "moves"
 CACHE_SUBDIR_LOCATIONS: str = "locations"
 CACHE_SUBDIR_TYPES: str = "types"
+CACHE_SUBDIR_PKMN: str = "pokémon"
 CACHE_FILE_EXT: str = ".json"
 CACHE_PATH_STR: str = os.path.join(os.path.dirname(__file__), CACHE_DIR)
 CACHE_PATH: Path = Path(CACHE_PATH_STR)
@@ -59,4 +60,8 @@ def cache_location(new_entry: JSON):
 
 def cache_type(new_entry: JSON):
     output = output_file(CACHE_SUBDIR_TYPES, new_entry.get("name", "unknown"))
+    dump_json(output, new_entry)
+
+def cache_pkmn(new_entry: JSON):
+    output = output_file(CACHE_SUBDIR_PKMN, new_entry.get("name", "unknown"))
     dump_json(output, new_entry)

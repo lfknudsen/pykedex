@@ -2,9 +2,9 @@
 from httpx import Response
 from caching import CACHE_SUBDIR_EVO, CACHE_SUBDIR_ITEMS, CACHE_SUBDIR_LOCATIONS, \
     CACHE_SUBDIR_MOVES, \
-    CACHE_SUBDIR_SPECIES, \
+    CACHE_SUBDIR_PKMN, CACHE_SUBDIR_SPECIES, \
     CACHE_SUBDIR_TYPES, cache_evo, cache_item, \
-    cache_location, cache_move, cache_species, \
+    cache_location, cache_move, cache_pkmn, cache_species, \
     cache_type, check_cache
 from classes import JSON
 
@@ -68,4 +68,11 @@ def retrieve_evo(url: str, verbose: bool) -> JSON:
     if contents is None:
         contents: JSON = request(url, verbose)
         cache_evo(contents)
+    return contents
+
+def retrieve_pkmn(name: str, verbose: bool) -> JSON:
+    contents: JSON | None = check_cache(CACHE_SUBDIR_PKMN, name)
+    if contents is None:
+        contents: JSON = request(f"https://pokeapi.co/api/v2/pokemon/{name}/", verbose)
+        cache_pkmn(contents)
     return contents

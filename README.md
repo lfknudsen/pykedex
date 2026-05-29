@@ -8,7 +8,7 @@ Contributions of any kind, no matter how trivial, are more than welcome, as long
 ## Usage
 
 ```
-py dex.py [-v] <Pokémon name> [id|egg|evo]
+py dex.py [-v] <Pokémon name> [id|egg|evo|moves]
 ```
 
 The Pokémon name is case insensitive.
@@ -19,6 +19,8 @@ National Pokédex number.
 The `egg` command prints a list of the Pokémon's egg groups.
 
 The `evo` command prints a list of the Pokémon's evolution chains.
+
+The `moves` command prints a list of the moves learned by the Pokémon in Sun/Moon (the last version with a national dex).
 
 The `-v` flag will print any HTTP requests being made. Can be used to verify caching.
 

@@ -1,6 +1,7 @@
 ﻿import sys
 
 from evo import print_evo_chains
+from movesets import VersionGroup, print_moveset
 from net import retrieve_species
 from classes import JSON
 
@@ -34,6 +35,8 @@ def main():
             [print(group.title()) for group in get_egg_groups(contents)]
         case "evo":
             print_evo_chains(name, contents, verbose)
+        case "moves":
+            print_moveset(name, VersionGroup.SM, verbose)
 
 
 if __name__ == "__main__":
