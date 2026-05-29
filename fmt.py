@@ -1,5 +1,5 @@
 ﻿from classes import JSON
-from net import retrieve_item, retrieve_location, retrieve_move, retrieve_pkmn, retrieve_type
+from net import retrieve_item, retrieve_location, retrieve_move, retrieve_species, retrieve_type
 
 
 def get_column_widths(chains: list[list[str]]) -> list[int]:
@@ -33,7 +33,7 @@ def get_formatted_name(content: JSON) -> str:
     return content.get("name", "Unknown").title()
 
 def get_formatted_pkmn_name(name: str, verbose: bool) -> str:
-    contents = retrieve_pkmn(name, verbose)
+    contents = retrieve_species(name, verbose)
     return get_formatted_name(contents)
 
 

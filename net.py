@@ -46,7 +46,7 @@ def retrieve_type(name: str, verbose: bool) -> JSON:
     return contents
 
 
-def retrieve_pkmn(name: str, verbose: bool) -> JSON:
+def retrieve_species(name: str, verbose: bool) -> JSON:
     contents: JSON | None = check_cache(CACHE_SUBDIR_SPECIES, name)
     if contents is None:
         contents: JSON = request(f"https://pokeapi.co/api/v2/pokemon-species/{name}/", verbose)

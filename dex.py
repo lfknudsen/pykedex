@@ -1,7 +1,7 @@
 ﻿import sys
 
 from evo import print_evo_chains
-from net import retrieve_pkmn
+from net import retrieve_species
 from classes import JSON
 
 
@@ -16,7 +16,7 @@ def main():
     if verbose:
         next_arg += 1
     name = sys.argv.pop(next_arg)
-    contents: JSON = retrieve_pkmn(name, verbose)
+    contents: JSON = retrieve_species(name, verbose)
 
     command: str = "id"
     if len(sys.argv) > next_arg:

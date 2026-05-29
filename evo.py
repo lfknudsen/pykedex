@@ -5,7 +5,7 @@ from classes import Evolution, JSON, Text
 from fmt import (get_column_widths, get_formatted_item_name,
                  get_formatted_location_name, get_formatted_move_name,
                  get_formatted_pkmn_name, get_formatted_type_name)
-from net import retrieve_evo, retrieve_pkmn
+from net import retrieve_evo, retrieve_species
 
 
 def parse_individual_evo_chain(before: list[Evolution],
@@ -180,7 +180,7 @@ def main():
     if verbose:
         next_arg += 1
     name = sys.argv.pop(next_arg)
-    contents: JSON = retrieve_pkmn(name, verbose)
+    contents: JSON = retrieve_species(name, verbose)
     print_evo_chains(name, contents, verbose)
 
 
